@@ -32,3 +32,11 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+
+# Other Unity Stuff
+*.asset
+*.unity
+*.meta
+*.prefab
+Library
+ProjectVersion.txt
