@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour {
 
+	//cheat to test switch;
+	public InteractiveObjectBase CheatToTestSwitch; 
+
     private Rigidbody rb;
     [Header("Movement Settings")]
     [Tooltip("The max speed the player can travel.")]
@@ -17,6 +20,8 @@ public class PlayerController : MonoBehaviour {
     [Tooltip("How slow the player must be moving before braking stops.")]
     public float brakingVelocity = 2f;
 
+	public bool StopAllMovement;
+
 	// Use this for initialization
 	void Start () {
         rb = GetComponent<Rigidbody>();
@@ -24,50 +29,79 @@ public class PlayerController : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-        Vector3 force = new Vector3();
+		
+		if (StopAllMovement) {
+			rb.velocity = Vector3.zero;
+		} else {
+			Movement ();
+		}
 
-        // Get input for movement on the x, y plane. Apply it to the force.
-        if (Input.GetKey(KeyCode.W))
-        {
-            force += rb.transform.forward;
-        }
-        if(Input.GetKey(KeyCode.S))
-        {
-            force += -rb.transform.forward;
-        }
-        if(Input.GetKey(KeyCode.A))
-        {
-            force += -rb.transform.right;
-        }
-        if(Input.GetKey(KeyCode.D))
-        {
-            force += rb.transform.right;
-        }
+		Interaction ();
 
-        // Make the player come to a stop more quickly.
-        Vector3 playerVelocity = rb.velocity;
-        playerVelocity.y = 0;
-
-        if(force == Vector3.zero && playerVelocity.magnitude > brakingVelocity)
-        {
-            force = -playerVelocity * brakeForce;
-        }
-
-        // Normalize the force for movement on the x, y plane, so moving diagonally doesn't make the player faster.
-        // Multiply by the movement force we can change how fast the player speeds up.
-        force = force.normalized * movementForce;
-
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            force += Vector3.up * jumpForce;
-        }
-
-        rb.AddForce(force);
-
-        // Limit the player speed.
-        if(rb.velocity.magnitude > maxVelocity)
-        {
-            rb.velocity = rb.velocity.normalized * maxVelocity;
-        }
     }
+
+	// Contain the movement logic here
+	void Movement(){
+		Vector3 force = new Vector3();
+
+		// Get input for movement on the x, y plane. Apply it to the force.
+		if (Input.GetKey(KeyCode.W))
+		{
+			force += rb.transform.forward;
+		}
+		if(Input.GetKey(KeyCode.S))
+		{
+			force += -rb.transform.forward;
+		}
+		if(Input.GetKey(KeyCode.A))
+		{
+			force += -rb.transform.right;
+		}
+		if(Input.GetKey(KeyCode.D))
+		{
+			force += rb.transform.right;
+		}
+
+		// Make the player come to a stop more quickly.
+		Vector3 playerVelocity = rb.velocity;
+		playerVelocity.y = 0;
+
+		if(force == Vector3.zero && playerVelocity.magnitude > brakingVelocity)
+		{
+			force = -playerVelocity * brakeForce;
+		}
+
+		// Normalize the force for movement on the x, y plane, so moving diagonally doesn't make the player faster.
+		// Multiply by the movement force we can change how fast the player speeds up.
+		force = force.normalized * movementForce;
+
+		if (Input.GetKeyDown(KeyCode.Space))
+		{
+			force += Vector3.up * jumpForce;
+		}
+
+		rb.AddForce(force);
+
+		// Limit the player speed.
+		if(rb.velocity.magnitude > maxVelocity)
+		{
+			rb.velocity = rb.velocity.normalized * maxVelocity;
+		}
+	}
+
+	void Interaction(){
+		StopAllMovement = false;
+
+		//cheat to test switch
+		if (Input.GetKeyDown (KeyCode.UpArrow)) {
+			CheatToTestSwitch.StartTrigger ();
+			if (CheatToTestSwitch.StopPlayerMovement)
+				StopAllMovement = true;//check object for "StopPlayerMovement"
+		}
+
+		if (Input.GetKeyUp (KeyCode.UpArrow)){
+			CheatToTestSwitch.StopTrigger ();
+		}
+
+	}
 }
