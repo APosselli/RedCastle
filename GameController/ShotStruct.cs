@@ -17,6 +17,9 @@ public class ShotStruct : MonoBehaviour {
 	public InteractiveObjectStruct[] InteractiveObjectStruct_Array;
 	public bool Continue_InteractiveObjects; // sets new struct data, keeps old gameobjects in old position
 
+	public Dialogue ShotDialogue;
+	public bool ShotDialogueOn;
+
 
 	public float ShotTime;
 	public float ShotEndTime;

@@ -90,17 +90,42 @@ public class PlayerController : MonoBehaviour {
 	}
 
 	void Interaction(){
-		StopAllMovement = false;
+		
 
-		//cheat to test switch
 		if (Input.GetKeyDown (KeyCode.UpArrow)) {
-			CheatToTestSwitch.StartTrigger ();
-			if (CheatToTestSwitch.StopPlayerMovement)
-				StopAllMovement = true;//check object for "StopPlayerMovement"
+
+			RaycastHit HitInfo;
+			int Layer = 1 << LayerMask.NameToLayer("InteractiveObject"); 
+			//Debug.DrawLine (transform.position, transform.forward * 10f, Color.red, 10f);
+
+			if (Physics.Raycast (transform.position, transform.forward, out HitInfo, 10f, Layer)) {
+				Debug.Log ("Hit object");
+				if (HitInfo.transform.GetComponent<InteractiveObjectBase> () != null) {
+					
+					HitInfo.transform.GetComponent<InteractiveObjectBase> ().StartTrigger ();
+					if (HitInfo.transform.GetComponent<InteractiveObjectBase> ().StopPlayerMovement) {
+						StopAllMovement = true;
+					}
+				}
+			}
 		}
 
 		if (Input.GetKeyUp (KeyCode.UpArrow)){
-			CheatToTestSwitch.StopTrigger ();
+
+			RaycastHit HitInfo;
+			int Layer = 1 << LayerMask.NameToLayer("InteractiveObject"); 
+			//Debug.DrawLine (transform.position, transform.forward * 10f, Color.red, 10f);
+
+			if (Physics.Raycast (transform.position, transform.forward, out HitInfo, 10f, Layer)) {
+				Debug.Log ("Hit object");
+				if (HitInfo.transform.GetComponent<InteractiveObjectBase> () != null) {
+
+					HitInfo.transform.GetComponent<InteractiveObjectBase> ().StopTrigger ();
+
+				}
+			}
+			
+			StopAllMovement = false;
 		}
 
 	}

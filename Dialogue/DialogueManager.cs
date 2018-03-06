@@ -23,7 +23,7 @@ public class DialogueManager : MonoBehaviour {
 
 	public void StartDialogue (Dialogue dialogue)
     {
-        //Debug.Log("Starting Conversation with " + dialogue.name);
+        Debug.Log("Starting Conversation with " + dialogue.name);
 
         // Sets paramater IsOpen to True when starting dialogue.
         animator.SetBool("IsOpen", true);
@@ -31,7 +31,13 @@ public class DialogueManager : MonoBehaviour {
         nameText.text = dialogue.name;
         charPortrait = dialogue.charImage;
 
-        sentences.Clear();
+		if (sentences != null) {
+
+			sentences.Clear ();
+		} else 
+		{
+			sentences = new Queue<string>();
+		}
 
         foreach (string sentence in dialogue.sentences)
         {

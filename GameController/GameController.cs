@@ -6,8 +6,6 @@ using UnityEngine;
 public class GameController : MonoBehaviour {
 
 	public DialogueManager DialogueManagerSpawned;
-	public Dialogue TestDialogue;
-
 
 	public ShotStruct[] Shot_Struct_Array;
 	ShotStruct Previous_Shot;
@@ -29,7 +27,6 @@ public class GameController : MonoBehaviour {
 		if (Current_Shot.ShotTime >= Current_Shot.ShotEndTime)
 		{
 			StartShot (Current_Shot.NextShotBranch[0]);
-			DialogueManagerSpawned.StartDialogue (TestDialogue);//test dialogue
 		}
 
 	}
@@ -116,15 +113,17 @@ public class GameController : MonoBehaviour {
 			}
 		}
 
+		// dialogue
+
+		if (Current_Shot.ShotDialogueOn) {
+
+			DialogueManagerSpawned.StartDialogue (Current_Shot.ShotDialogue);//test dialogue
+		}
+
 		//end the previous shot (if there was one) , don't destroy objects if they are supposed to continue. 
 		if (Previous_Shot != null) {
 			EndShot (Previous_Shot, Current_Shot);
 		}
-
-		//cheat to test switch
-		Debug.Log(Current_Shot.GameObjectStruct_Array [0].SpawnedObject.GetComponent<PlayerController> ().CheatToTestSwitch);
-		Debug.Log(Current_Shot.InteractiveObjectStruct_Array [0].SpawnedInteractiveObject);
-		Current_Shot.GameObjectStruct_Array [0].SpawnedObject.GetComponent<PlayerController> ().CheatToTestSwitch = Current_Shot.InteractiveObjectStruct_Array [0].SpawnedInteractiveObject;
 
 
 	}
