@@ -25,9 +25,9 @@ public class CameraController : MonoBehaviour {
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
 
-        relativePosition = new Vector3();
         playerRb = player.GetComponent<Rigidbody>();
-	}
+        relativePosition = (transform.position - playerRb.position).normalized * defaultCamDist;
+    }
 	
 	// Update is called once per frame
 	void Update () {
@@ -35,9 +35,32 @@ public class CameraController : MonoBehaviour {
         // Make the camera position relative to the player the same as it was the last frame.
         transform.position = player.transform.position + relativePosition;
         // Create a vector for moving the camera based on mouse input and sensitivity.
-        Vector3 movement = new Vector3(-(Input.GetAxis("Horizontal") * xAxisSens), -(Input.GetAxis("Vertical") * yAxisSens), 0f);
+        Vector3 movement = Vector3.zero;
+        if (!(transform.forward == Vector3.down))
+            movement = new Vector3(-(Input.GetAxis("Horizontal") * xAxisSens), -(Input.GetAxis("Vertical") * yAxisSens), 0f);
+        else
+        {
+            if(-Input.GetAxis("Vertical") < 0)
+            {
+                movement = new Vector3(0f, -(Input.GetAxis("Vertical") * yAxisSens), 0f);
+            }
+        }
         // Translate the camera using the movement vector.
         transform.Translate(movement * Time.deltaTime);
+
+        if(transform.position.y > playerRb.position.y + defaultCamDist)
+        {
+            Quaternion camRotation = transform.rotation;
+            transform.position = Vector3.up * defaultCamDist + playerRb.position;
+            transform.rotation = camRotation;
+        }
+
+        if(transform.position.y < (playerRb.position.y - 0.25f))
+        {
+            Vector3 position = transform.position;
+            position.y = playerRb.position.y - 0.25f;
+            transform.position = position;
+        }
 
         // Use a raycast to determine if anything is between the player and the camera.
         // Sets the camera distance to either the default distance or the distance to the closest object between the
@@ -56,7 +79,8 @@ public class CameraController : MonoBehaviour {
         // Actual camera distance is changed here.
         transform.position = (player.transform.position + camDistance * (transform.position - player.transform.position).normalized);
         // Make the camera look at the player.
-        transform.LookAt(player.transform);
+        if(transform.position != Vector3.up * defaultCamDist + playerRb.position)
+            transform.LookAt(player.transform);
 
         // Rotate the player to face the same direction as the camera on the y-axis.
         Vector3 rotationVector = transform.rotation.eulerAngles;

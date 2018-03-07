@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour {
+public class PlayerController : MonoBehaviour
+{
 
     private Rigidbody rb;
     [Header("Movement Settings")]
@@ -17,29 +18,39 @@ public class PlayerController : MonoBehaviour {
     [Tooltip("How slow the player must be moving before braking stops.")]
     public float brakingVelocity = 2f;
 
-	// Use this for initialization
-	void Start () {
+    private bool canJump = false;
+    private bool wallJump = false;
+    private Vector3 wallJumpVector;
+
+    private float playerHeight;
+
+    // Use this for initialization
+    void Start()
+    {
         rb = GetComponent<Rigidbody>();
-	}
-	
-	// Update is called once per frame
-	void Update () {
+        playerHeight = GetComponent<MeshFilter>().mesh.bounds.size.y;
+        wallJumpVector = new Vector3();
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
         Vector3 force = new Vector3();
 
         // Get input for movement on the x, y plane. Apply it to the force.
-        if (Input.GetKey(KeyCode.W))
+        if (Input.GetKey(KeyCode.W) && canJump)
         {
             force += rb.transform.forward;
         }
-        if(Input.GetKey(KeyCode.S))
+        if (Input.GetKey(KeyCode.S) && canJump)
         {
             force += -rb.transform.forward;
         }
-        if(Input.GetKey(KeyCode.A))
+        if (Input.GetKey(KeyCode.A) && canJump)
         {
             force += -rb.transform.right;
         }
-        if(Input.GetKey(KeyCode.D))
+        if (Input.GetKey(KeyCode.D) && canJump)
         {
             force += rb.transform.right;
         }
@@ -48,7 +59,7 @@ public class PlayerController : MonoBehaviour {
         Vector3 playerVelocity = rb.velocity;
         playerVelocity.y = 0;
 
-        if(force == Vector3.zero && playerVelocity.magnitude > brakingVelocity)
+        if (force == Vector3.zero && playerVelocity.magnitude > brakingVelocity && canJump)
         {
             force = -playerVelocity * brakeForce;
         }
@@ -59,15 +70,70 @@ public class PlayerController : MonoBehaviour {
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            force += Vector3.up * jumpForce;
+            if (canJump)
+            {
+                force += Vector3.up * jumpForce;
+            }
+            else if (wallJump)
+            {
+                force += wallJumpVector;
+            }
         }
 
         rb.AddForce(force);
 
         // Limit the player speed.
-        if(rb.velocity.magnitude > maxVelocity)
+        if (rb.velocity.magnitude > maxVelocity)
         {
             rb.velocity = rb.velocity.normalized * maxVelocity;
+        }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        SetJump(collision);
+    }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        SetJump(collision);
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        canJump = false;
+        wallJump = false;
+    }
+
+    private void SetJump(Collision collision)
+    {
+        ContactPoint highestContactPoint = collision.contacts[0];
+        foreach (ContactPoint point in collision.contacts)
+        {
+            if (point.point.y > highestContactPoint.point.y)
+            {
+                highestContactPoint = point;
+            }
+        }
+
+        if (highestContactPoint.point.y <= (rb.transform.position.y - ((playerHeight / 2) * 0.9f)))
+        {
+            wallJump = false;
+            canJump = true;
+        }
+        else
+        {
+            wallJump = true;
+            canJump = false;
+            wallJumpVector = highestContactPoint.normal;
+            wallJumpVector.y = 0;
+            Vector3 playerPlanarVector = -transform.forward;
+            playerPlanarVector.y = 0;
+            wallJumpVector.Normalize();
+            wallJumpVector = playerPlanarVector - 2 * (playerPlanarVector - (Vector3.Dot(playerPlanarVector, wallJumpVector) * wallJumpVector));
+            wallJumpVector.Normalize();
+            wallJumpVector = wallJumpVector * jumpForce;
+            wallJumpVector.y = jumpForce;
         }
     }
 }
