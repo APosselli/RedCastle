@@ -1,12 +1,16 @@
 ﻿// MoveTo.cs
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class MoveTo : MonoBehaviour
 {
 
-    public Waypoint target;
-    public Vector3 goal;
+    public Queue<Vector3> Targets = new Queue<Vector3>();
+    private Vector3 CurrentGoal;
+    bool Obstacle;
+
+
     UnityEngine.AI.NavMeshAgent agent;
     private Waypoint tempTarget;
     private bool isJumping;
@@ -14,39 +18,45 @@ public class MoveTo : MonoBehaviour
 
     void Start()
     {
+        Targets.Enqueue(new Vector3(-20.6f, 1.083333f, 14.05f));
+        Targets.Enqueue(new Vector3(18.4f, 1.083333f, 14.05f));
+
         isJumping = false;
+
         agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
-        rb = GetComponent<Rigidbody>();
-        agent.destination = goal;
-        tempTarget = target;
         agent.enabled = false;
+
+        rb = GetComponent<Rigidbody>();
+        
     }
 
     void Update()
     {
-        CheckObstacle();
+        Debug.Log("current target: " + CurrentGoal);
+        Debug.Log("Distance: " + Vector3.Distance(rb.transform.position, CurrentGoal));
         CheckJump();
-
-        if (target != null)
-        {
-            goal = target.position;
-        }
-        if (agent.enabled)
-        {
-            agent.destination = goal;
-        }
-
+        CheckObstacle();
+        UpdateWaypoints();
+       
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void UpdateWaypoints()
     {
-        if (other.CompareTag("Waypoint"))
+        if (!Obstacle)
         {
-            if (target != null)
+            if (Vector3.Distance(rb.transform.position, CurrentGoal) < 0.2f && Targets.Count > 0)
             {
-                target = target.target;
-                tempTarget = target;
+                Targets.Dequeue();
             }
+            if (Targets.Count > 0)
+            {
+                CurrentGoal = Targets.Peek();
+            }
+        }
+
+        if (agent.enabled)
+        {
+            agent.destination = CurrentGoal;
         }
     }
 
@@ -54,16 +64,16 @@ public class MoveTo : MonoBehaviour
     {
         if(Physics.Raycast(transform.position, transform.forward, 1f))
         {
-            if(target != null)
-            {
-                tempTarget = target;
-                target = null;
-                goal = transform.position;
-            }
+            Obstacle = true;
+            CurrentGoal = transform.position;
         }
         else
         {
-            target = tempTarget;
+            Obstacle = false;
+            if (Targets.Count > 0)
+            {
+                CurrentGoal = Targets.Peek();
+            }
         }
     }
 
@@ -73,8 +83,8 @@ public class MoveTo : MonoBehaviour
 
         Debug.DrawRay(transform.position + Vector3.up * 0.5f + transform.forward * 1f, Vector3.down * 1.10f, Color.red);
 
-        Vector3 planarDirectionToGoal = goal - transform.position;
-        Vector3 planarGoal = goal;
+        Vector3 planarDirectionToGoal = CurrentGoal - transform.position;
+        Vector3 planarGoal = CurrentGoal;
         planarGoal.y = transform.position.y;
         planarDirectionToGoal.y = 0;
         planarDirectionToGoal.Normalize();
@@ -96,14 +106,16 @@ public class MoveTo : MonoBehaviour
             }
             else
             {
+                rb.velocity = Vector3.zero;
                 rb.AddForce((Vector3.up) * 300); //make 300 a variable jump height
                 Debug.Log("jump");
             }
 
         }
-        // pre jump start
+        // Not jumping
         else if(rayCastHit)
         {
+            //Debug.Log("not moving in jump");
             agent.enabled = true;
             isJumping = false;
         }
@@ -119,7 +131,7 @@ public class MoveTo : MonoBehaviour
 
     private void RotateToGoal()
     {
-        Vector3 planarDirectionToGoal = new Vector3(goal.x, transform.position.y, goal.z) - transform.position;
+        Vector3 planarDirectionToGoal = new Vector3(CurrentGoal.x, transform.position.y, CurrentGoal.z) - transform.position;
         Quaternion fullRotation = Quaternion.LookRotation(planarDirectionToGoal, Vector3.up);
         rb.transform.rotation = Quaternion.RotateTowards(rb.transform.rotation, fullRotation, 400f * Time.deltaTime);
     }
