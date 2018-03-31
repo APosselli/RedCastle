@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour {
+public class PlayerController : MonoBehaviour
+{
 
-    
+
 
     private Rigidbody rb;
     [Header("Movement Settings")]
@@ -19,9 +20,9 @@ public class PlayerController : MonoBehaviour {
     [Tooltip("How slow the player must be moving before braking stops.")]
     public float brakingVelocity = 2f;
     [Tooltip("The fraction of the sideways force that will be applied when moving the player character in midair.")]
-    public float sidewaysAerialForce = 0.01f;
+    public float sidewaysAerialForce = 1.5f;
     [Tooltip("The fraction of the front/back force that will be applied when moving the player character in midair.")]
-    public float straightAerialFore = 0.02f;
+    public float straightAerialForce = 3f;
 
     private bool canJump = false;
     private bool wallJump = false;
@@ -42,10 +43,6 @@ public class PlayerController : MonoBehaviour {
     // negligible when compared to the wall jump force.
     private float wallJumpTimer = 0.0f;
 
-    //private Rigidbody childRb;
-    private Vector3 oldEuler;
-    //private Quaternion oldRotation;
-
     public GameObject greenModel;
 
     //nicks variables:
@@ -54,8 +51,6 @@ public class PlayerController : MonoBehaviour {
 
     //forces that get set
     private Vector3 previousForce;
-
-    private Vector3 JumpDirection;
 
     //animation:
     public Animator PlayerAnimator;
@@ -76,8 +71,6 @@ public class PlayerController : MonoBehaviour {
         playerColliderHeight = transform.gameObject.GetComponent<CapsuleCollider>().height;
         playerColliderRadius = transform.gameObject.GetComponent<CapsuleCollider>().radius;
         wallJumpVector = new Vector3();
-        oldEuler = rb.rotation.eulerAngles;
-        JumpDirection = new Vector3();
         //oldRotation = rb.transform.rotation;
     }
 
@@ -137,7 +130,10 @@ public class PlayerController : MonoBehaviour {
         //Debug.Log("force " + force);
         // movement against a wall
         RaycastHit WallMovementCastHit;
-        if (Physics.Raycast(rb.transform.position, force, out WallMovementCastHit, playerColliderRadius + .5f))
+        //INTOBINTO
+
+        int PlatformMask = 1 << LayerMask.NameToLayer("Platform");
+        if (Physics.Raycast(rb.transform.position, force, out WallMovementCastHit, playerColliderRadius + .5f, PlatformMask))
         {
 
             force = Vector3.ProjectOnPlane(force, WallMovementCastHit.normal);
@@ -147,7 +143,7 @@ public class PlayerController : MonoBehaviour {
         // Make the player come to a stop more quickly.
         Vector3 playerVelocity = rb.velocity;
         playerVelocity.y = 0;
-        
+
         if (force == Vector3.zero && playerVelocity.magnitude > brakingVelocity && canJump)
         {
             force = -playerVelocity * brakeForce;
@@ -160,12 +156,12 @@ public class PlayerController : MonoBehaviour {
         // Lessen movement in midair.
         if (!canJump)
         {
-            Vector3 forwardForce = Vector3.Dot(force, transform.forward) * transform.forward * straightAerialFore;
+            Vector3 forwardForce = Vector3.Dot(force, transform.forward) * transform.forward * straightAerialForce;
             Vector3 sidewaysForce = Vector3.Dot(force, transform.right) * transform.right * sidewaysAerialForce;
             force = forwardForce + sidewaysForce;
 
             Debug.Log("force 1 " + force);
-            float fm = Mathf.Min(force.magnitude, straightAerialFore);
+            float fm = Mathf.Min(force.magnitude, straightAerialForce);
             force = force.normalized * fm;
             Debug.Log("force 2 " + force);
 
@@ -181,7 +177,7 @@ public class PlayerController : MonoBehaviour {
             force = Vector3.zero;
         }
 
-        if(clinging)
+        if (clinging)
         {
             rb.velocity = Vector3.zero;
             rb.transform.position = clingSurface.transform.position - relativePosition;
@@ -201,16 +197,14 @@ public class PlayerController : MonoBehaviour {
 
                 JumpForAnimation = true;
 
-                if(clinging)
+                if (clinging)
                 {
                     Rigidbody clingRb = clingSurface.GetComponent<Rigidbody>();
-                    if(clingRb != null)
+                    if (clingRb != null)
                     {
                         rb.velocity = clingRb.velocity;
                     }
                 }
-
-                JumpDirection = rb.velocity;
             }
             else if (wallJump)
             {
@@ -219,8 +213,6 @@ public class PlayerController : MonoBehaviour {
                 wallJumpTimer = 0.4f;
 
                 JumpForAnimation = true;
-
-                JumpDirection = rb.velocity;
             }
         }
 
@@ -244,7 +236,8 @@ public class PlayerController : MonoBehaviour {
 
 
         RaycastHit ModelGroundCastHit;
-        if(IsGrounded() && Physics.Raycast(transform.position, -Vector3.up, out ModelGroundCastHit)){
+        if (IsGrounded() && Physics.Raycast(transform.position, -Vector3.up, out ModelGroundCastHit))
+        {
 
             //GroundNormal = ModelGroundCastHit.normal;
             //Quaternion newRotation = new Quaternion();
@@ -283,7 +276,7 @@ public class PlayerController : MonoBehaviour {
                 CF_Fall = false;
                 CF_Standing = false;
             }
-            else if(!IsGrounded() && rb.velocity.y <= 0 && !StopAllMovement) //fall
+            else if (!IsGrounded() && rb.velocity.y <= 0 && !StopAllMovement) //fall
             {
                 if (!wallJump)
                 {
@@ -341,7 +334,7 @@ public class PlayerController : MonoBehaviour {
                 {
                     float newzrotation = Mathf.Min(Mathf.Abs(AngleDifference) * 100, 30) * (AngleDifference / Mathf.Abs(AngleDifference));
                     zrotation = Mathf.Lerp(zrotation, newzrotation, Time.deltaTime * 20);
-                } 
+                }
                 //Debug.Log(zrotation);
                 greenModel.transform.rotation = Quaternion.Euler(greenModel.transform.rotation.eulerAngles.x, greenModel.transform.rotation.eulerAngles.y, zrotation);
 
@@ -364,7 +357,7 @@ public class PlayerController : MonoBehaviour {
                 CF_Jumping = false;
                 CF_Mid_Jump = false;
                 CF_Fall = false;
-                
+
             }
         }
 
@@ -383,7 +376,7 @@ public class PlayerController : MonoBehaviour {
 
 
         //Animation logic for running_left and running_right
-        
+
         Vector3 PreviousVector = previousRotation * Vector3.forward;
         Vector3 NewVector = rb.transform.rotation * Vector3.forward;
 
@@ -421,7 +414,7 @@ public class PlayerController : MonoBehaviour {
     private bool IsGrounded()
     {
         //if(Physics.Raycast(transform.position, Vector3.down, (playerColliderHeight / 2) * 1.05f))
-            //Debug.Log("Print Grounded " + Time.time);
+        //Debug.Log("Print Grounded " + Time.time);
 
         //return Physics.Raycast(transform.position, Vector3.down, (playerColliderHeight / 2) * 1.15f);
         return Physics.Raycast(transform.position, Vector3.down, (playerColliderHeight / 2) * 1.05f);
@@ -443,7 +436,7 @@ public class PlayerController : MonoBehaviour {
             //collidingWithWall = true;
             //collidingWall = collision.gameObject;
         }
-        
+
     }
 
     private void OnCollisionStay(Collision collision)
@@ -451,7 +444,7 @@ public class PlayerController : MonoBehaviour {
         if (rb)
         {
             SetJump(collision);
-            
+
 
         }
     }
@@ -464,7 +457,7 @@ public class PlayerController : MonoBehaviour {
             wallJump = false;
             //collidingWithWall = false;
         }
-           
+
     }
 
     private void SetJump(Collision collision)
@@ -485,7 +478,7 @@ public class PlayerController : MonoBehaviour {
             canJump = true;
             wallJumpTimer = 0.0f;
 
-            }
+        }
         else
         {
             wallJump = true;
@@ -498,7 +491,7 @@ public class PlayerController : MonoBehaviour {
             Vector3 playerPlanarVector = transform.forward;
             if (Physics.Raycast(transform.position, transform.forward, out hit))
             {
-                if(hit.transform.gameObject == collision.gameObject)
+                if (hit.transform.gameObject == collision.gameObject)
                 {
                     playerPlanarVector = -transform.forward; // if player is actually looking at the wall mirror transform
                 }
@@ -517,10 +510,10 @@ public class PlayerController : MonoBehaviour {
     {
         // Replace hard-coded distance
         RaycastHit hit;
-        if(rb.velocity.y < 0f && !IsGrounded() && Physics.Raycast(rb.transform.position, rb.transform.forward, out hit, playerColliderRadius + 0.1f) && 
-            !Physics.Raycast(rb.transform.position + Vector3.up * (playerColliderHeight + 0.1f), rb.transform.forward, playerColliderRadius + 0.1f))
+        if (rb.velocity.y < 0f && !IsGrounded() && Physics.Raycast(rb.transform.position, rb.transform.forward, out hit, playerColliderRadius + 0.3f) &&
+            !Physics.Raycast(rb.transform.position + Vector3.up * (playerColliderHeight + 0.1f), rb.transform.forward, playerColliderRadius + 0.3f))
         {
-            
+
             clingSurface = hit.collider.gameObject;
 
             if (!clinging)
@@ -546,7 +539,7 @@ public class PlayerController : MonoBehaviour {
             RaycastHit HitInfo;
             int Layer = 1 << LayerMask.NameToLayer("InteractiveObject");
             //Debug.DrawLine (transform.position, transform.forward * 10f, Color.red, 10f);
-            
+
             if (Physics.BoxCast(transform.position, new Vector3(.75f, .75f, 0f), transform.forward, out HitInfo, transform.rotation, 1.5f, Layer))
             {
                 //Debug.Log("Hit object");
@@ -582,7 +575,7 @@ public class PlayerController : MonoBehaviour {
             int Layer = 1 << LayerMask.NameToLayer("InteractiveObject");
             //Debug.DrawLine (transform.position, transform.forward * 10f, Color.red, 10f);
             //Debug.Log("attempt raycast");
-            if (Physics.BoxCast(transform.position, new Vector3(.75f, .75f, 0f), transform.forward, out HitInfo, transform.rotation,  1.5f, Layer))
+            if (Physics.BoxCast(transform.position, new Vector3(.75f, .75f, 0f), transform.forward, out HitInfo, transform.rotation, 1.5f, Layer))
             {
                 //Debug.Log("Hit object");
                 if (HitInfo.transform.GetComponent<InteractiveObjectBase>() != null)
